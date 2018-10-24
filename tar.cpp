@@ -65,14 +65,14 @@ int main(int argc, char *argv[]){
 		v=true;
 	}
 	else{
-		printf("usage to create an archive: tar -c[v] ARCHIVE DIRECTORY\n");
-                printf("usage to extract an archive: tar -x[v] ARCHIVE\n");
+		printf("usage to create an archive: tar c[v] ARCHIVE DIRECTORY\n");
+                printf("usage to extract an archive: tar x[v] ARCHIVE\n");
 		exit(-1);
 	}
 	
 	if(c){
 		if(argc!=4){
-                	printf("usage to create an archive: tar -c[v] ARCHIVE DIRECTORY\n");
+                	printf("usage to create an archive: tar c[v] ARCHIVE DIRECTORY\n");
 			exit(-1);
 		}
 		else{
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]){
 	}
 	else if(x){
         	if(argc!=3){
-                        printf("usage to extract an archive: tar -x[v] ARCHIVE\n");
+                        printf("usage to extract an archive: tar x[v] ARCHIVE\n");
 			exit(-1);
                 }
 		else{
