@@ -76,11 +76,13 @@ int main(int argc, char *argv[]){
 			exit(-1);
 		}
 		else{
-			if((archivefile=fopen(argv[4], "w"))==NULL){
+			printf("%s\n", argv[3]);
+			printf("%s\n", argv[2]);
+			if((archivefile=fopen(argv[3], "w"))==NULL){
 				printf("Could not open output archive file\n");
 				return -1;
 			}
-			create(argv[3]);
+			create(argv[2]);
 		}
 	}
 	else if(x){
