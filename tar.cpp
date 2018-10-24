@@ -78,7 +78,7 @@ int main(int argc, char *argv[]){
 		else{
 			printf("%s\n", argv[3]);
 			printf("%s\n", argv[2]);
-			if((archivefile=fopen(argv[3], "w"))==NULL){
+			if((archivefile=fopen(argv[2], "w"))==NULL){
 				printf("Could not open output archive file\n");
 				return -1;
 			}
