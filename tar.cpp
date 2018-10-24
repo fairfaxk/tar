@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <sstream>
+#include <iostream>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <cstdlib>
@@ -23,19 +25,27 @@ int create(char* path){
 	
 	struct dirent *de;
 	
+	if(v){
+		printf("%s:processing\n", path);
+	}
 	d=opendir(path);
 	
 	if(d == NULL) { perror("Couldn't open directory"); exit(1); }
 
 	for(de = readdir(d); de != NULL; de = readdir(d)){
-		if(stat(de->d_name, &finfo) == 0){
-			fwrite(&finfo, sizeof(struct stat), 1, archivefile);
-			//string s = de->d_name;
-			fprintf(archivefile, "%s\n", de->d_name);
-			//fwrite(s, s.size(), 1, archivefile);
-		}
-		else{
-			printf("%s: file not found\n", de->d_name);
+		if(string(de->d_name)!="." && string(de->d_name)!=".."){	
+			string s = string(path) + "/" + string(de->d_name);
+		
+			if(stat(s.c_str(), &finfo) == 0){
+				if(v){
+					printf("%s/%s:processing\n", path, de->d_name);
+				}
+				fwrite(&finfo, sizeof(struct stat), 1, archivefile);
+				fprintf(archivefile, "%s\n", de->d_name);
+			}
+			else{
+				printf("%s: file not found\n", de->d_name);
+			}
 		}
 	}
 	
@@ -76,13 +86,11 @@ int main(int argc, char *argv[]){
 			exit(-1);
 		}
 		else{
-			printf("%s\n", argv[3]);
-			printf("%s\n", argv[2]);
 			if((archivefile=fopen(argv[2], "w"))==NULL){
 				printf("Could not open output archive file\n");
 				return -1;
 			}
-			create(argv[2]);
+			create(argv[3]);
 		}
 	}
 	else if(x){
