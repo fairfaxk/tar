@@ -54,6 +54,12 @@ int create(char* path){
 
 int extract(){
 	//printf("x=%d v=%d\n", x, v);
+	struct stat finfo;
+	while(fread(&finfo, sizeof(struct stat), 1, archivefile)){
+		char* filename;
+		fscanf(archivefile, "%s\n", filename);
+		printf("file:%s inode:%d size:%d\n", filename, finfo.st_ino, finfo.st_size);
+	}
 	return 1;
 }
 
@@ -75,19 +81,18 @@ int main(int argc, char *argv[]){
 		v=true;
 	}
 	else{
-		printf("usage to create an archive: tar c[v] ARCHIVE DIRECTORY\n");
-                printf("usage to extract an archive: tar x[v] ARCHIVE\n");
+		perror("usage to create an archive: tar c[v] ARCHIVE DIRECTORY\nusage to extract an archive: tar x[v] ARCHIVE\n");
 		exit(-1);
 	}
 	
 	if(c){
 		if(argc!=4){
-                	printf("usage to create an archive: tar c[v] ARCHIVE DIRECTORY\n");
+                	perror("usage to create an archive: tar c[v] ARCHIVE DIRECTORY\n");
 			exit(-1);
 		}
 		else{
 			if((archivefile=fopen(argv[2], "w"))==NULL){
-				printf("Could not open output archive file\n");
+				perror("Could not open output archive file\n");
 				return -1;
 			}
 			create(argv[3]);
@@ -95,10 +100,14 @@ int main(int argc, char *argv[]){
 	}
 	else if(x){
         	if(argc!=3){
-                        printf("usage to extract an archive: tar x[v] ARCHIVE\n");
+                        perror("usage to extract an archive: tar x[v] ARCHIVE\n");
 			exit(-1);
                 }
 		else{
+                        if((archivefile=fopen(argv[2], "r"))==NULL){
+                                perror("Could not open archive file\n");
+                                return -1;
+                        }
 			extract();
 		}
 	}
