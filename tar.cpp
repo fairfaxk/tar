@@ -43,10 +43,10 @@ int create(char* path){
 		
 			if(stat(s.c_str(), &finfo) == 0){
 				if(S_ISDIR(finfo.st_mode)){
-					create(s.c_str());
+					create((char *) s.c_str());
 				}
 				else if(S_ISREG(finfo.st_mode)){
-	                                if(v){
+	                               if(v){
          	                               printf("%s:processing\n", s.c_str());
                  	               }
 
