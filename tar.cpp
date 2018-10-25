@@ -42,31 +42,36 @@ int create(char* path){
 			string s = string(path) + "/" + string(de->d_name);
 		
 			if(stat(s.c_str(), &finfo) == 0){
-				if(v){
-					printf("%s/%s:processing\n", path, de->d_name);
+				if(S_ISDIR(finfo.st_mode)){
+					create(s.c_str());
 				}
-				FILE *file;
-				
-				//write struct stat to archive
-				fwrite(&finfo, sizeof(struct stat), 1, archivefile);
-				
-				//write file name to archive
-				fprintf(archivefile, "%s\n", s.c_str());
+				else if(S_ISREG(finfo.st_mode)){
+	                                if(v){
+         	                               printf("%s:processing\n", s.c_str());
+                 	               }
 
-				//Write contents of file to archive
-                                if((file=fopen(s.c_str(), "r"))!=NULL){
-                                	char c = fgetc(file); 
-					while (c != EOF) 
-    					{ 
-       						fputc(c, archivefile); 
-        					c = fgetc(file); 
-    					} 
-                                }
-				else{
-					perror("Couldn't write file");
-					exit(1);
+					FILE *file;
+				
+					//write struct stat to archive
+					fwrite(&finfo, sizeof(struct stat), 1, archivefile);
+				
+					//write file name to archive
+					fprintf(archivefile, "%s\n", s.c_str());
+
+					//Write contents of file to archive
+                                	if((file=fopen(s.c_str(), "r"))!=NULL){
+                                		char c = fgetc(file); 
+						while (c != EOF) 
+    						{ 
+       							fputc(c, archivefile); 
+        						c = fgetc(file); 
+    						} 
+                                	}
+					else{
+						perror("Couldn't write file");
+						exit(1);
+					}
 				}
-
 			}
 			else{
 				perror("file not found\n");
