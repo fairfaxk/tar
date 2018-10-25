@@ -18,19 +18,24 @@ bool x = false;
 bool v = false;
 
 int create(char* path){
-	//printf("c=%d v=%d\n", c, v);
 	struct stat finfo;
 	
 	DIR *d;
 	
 	struct dirent *de;
-	
-	if(v){
-		printf("%s:processing\n", path);
-	}
+
 	d=opendir(path);
-	
+
 	if(d == NULL) { perror("Couldn't open directory"); exit(1); }
+	
+	//TODO:Implement this so it tracks if the base path is a subdirectory
+	if(stat(path, &finfo) == 0){
+	        if(v){
+        	        printf("%s:processing\n", path);
+        	}
+		fwrite(&finfo, sizeof(struct stat), 1, archivefile);
+		fprintf(archivefile, "%s\n", path);
+	}
 
 	for(de = readdir(d); de != NULL; de = readdir(d)){
 		if(string(de->d_name)!="." && string(de->d_name)!=".."){	
@@ -40,11 +45,32 @@ int create(char* path){
 				if(v){
 					printf("%s/%s:processing\n", path, de->d_name);
 				}
+				FILE *file;
+				
+				//write struct stat to archive
 				fwrite(&finfo, sizeof(struct stat), 1, archivefile);
-				fprintf(archivefile, "%s\n", de->d_name);
+				
+				//write file name to archive
+				fprintf(archivefile, "%s\n", s.c_str());
+
+				//Write contents of file to archive
+                                if((file=fopen(s.c_str(), "r"))!=NULL){
+                                	char c = fgetc(file); 
+					while (c != EOF) 
+    					{ 
+       						fputc(c, archivefile); 
+        					c = fgetc(file); 
+    					} 
+                                }
+				else{
+					perror("Couldn't write file");
+					exit(1);
+				}
+
 			}
 			else{
-				printf("%s: file not found\n", de->d_name);
+				perror("file not found\n");
+				exit(1);
 			}
 		}
 	}
@@ -53,19 +79,44 @@ int create(char* path){
 }
 
 int extract(){
-	//printf("x=%d v=%d\n", x, v);
 	struct stat finfo;
 	while(fread(&finfo, sizeof(struct stat), 1, archivefile)){
-		char* filename;
-		fscanf(archivefile, "%s\n", filename);
-		printf("file:%s inode:%d size:%d\n", filename, finfo.st_ino, finfo.st_size);
+		char filename[255]; 
+                fscanf(archivefile, "%s\n", filename);
+                if(v){
+                	printf("processing:%s\n", filename);
+                }
+		if(S_ISDIR(finfo.st_mode)){
+			if(mkdir(filename, finfo.st_mode)==0){
+				
+			}
+			else{
+				perror("Could not make directory");
+				exit(1);
+			}
+		}
+		else if(S_ISREG(finfo.st_mode)){
+			FILE *file;
+			printf("file:%s inode:%lu size:%ld\n", filename, finfo.st_ino, finfo.st_size);
+			char buf[finfo.st_size];
+			
+			//read content from archive file and write it to new file in directory
+			if(fread(buf,finfo.st_size,1,archivefile)>=0){
+				if((file=fopen(filename, "w"))!=NULL){
+					fwrite(buf, finfo.st_size, 1, file);
+				}
+				//printf("%s", buf);
+			}
+			else{
+				perror("Could not read content of file");
+				exit(1);
+			}
+		}
 	}
 	return 1;
 }
 
 int main(int argc, char *argv[]){
-	//int flag;
-	//printf("%s\n", argv[1]);
 	if(strcmp(argv[1], "c")==0){
 		c=true;
 	}
@@ -93,7 +144,7 @@ int main(int argc, char *argv[]){
 		else{
 			if((archivefile=fopen(argv[2], "w"))==NULL){
 				perror("Could not open output archive file\n");
-				return -1;
+				exit(-1);
 			}
 			create(argv[3]);
 		}
@@ -106,7 +157,7 @@ int main(int argc, char *argv[]){
 		else{
                         if((archivefile=fopen(argv[2], "r"))==NULL){
                                 perror("Could not open archive file\n");
-                                return -1;
+                                exit(-1);
                         }
 			extract();
 		}
