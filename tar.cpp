@@ -9,6 +9,9 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string.h>
+#include <linux/limits.h>
+#include <set>
+
 using namespace std;
 
 FILE *archivefile;
@@ -24,11 +27,12 @@ int create(char* path){
 	
 	struct dirent *de;
 
+	set<ino_t> inodes;
+
 	d=opendir(path);
 
 	if(d == NULL) { perror("Couldn't open directory"); exit(1); }
 	
-	//TODO:Implement this so it tracks if the base path is a subdirectory
 	if(stat(path, &finfo) == 0){
 	        if(v){
         	        printf("%s:processing\n", path);
@@ -57,19 +61,25 @@ int create(char* path){
 				
 					//write file name to archive
 					fprintf(archivefile, "%s\n", s.c_str());
+					
+					//Check to make sure we haven't written inode info for hard links
+					if(inodes.find(finfo.st_ino) == inodes.end()){
+      						inodes.insert(finfo.st_ino);
 
-					//Write contents of file to archive
-                                	if((file=fopen(s.c_str(), "r"))!=NULL){
-                                		char c = fgetc(file); 
-						while (c != EOF) 
-    						{ 
-       							fputc(c, archivefile); 
-        						c = fgetc(file); 
-    						} 
-                                	}
-					else{
-						perror("Couldn't write file");
-						exit(1);
+						//Write contents of file to archive
+                                		if((file=fopen(s.c_str(), "r"))!=NULL){
+                                			char c = fgetc(file); 
+							while (c != EOF) 
+    							{ 
+       								fputc(c, archivefile); 
+        							c = fgetc(file); 
+    							} 
+                                		}
+						else{
+							perror("Couldn't write file");
+							exit(1);
+						}
+						fclose(file);
 					}
 				}
 			}
@@ -79,15 +89,21 @@ int create(char* path){
 			}
 		}
 	}
+	closedir(d);
 	
 	return 1;
 }
 
 int extract(){
 	struct stat finfo;
+	char filename[PATH_MAX];
+
+	fread(&finfo, sizeof(struct stat), 1, archivefile);
+	fscanf(archivefile, "%s\n", filename);
+	
 	while(fread(&finfo, sizeof(struct stat), 1, archivefile)){
-		char filename[255]; 
                 fscanf(archivefile, "%s\n", filename);
+
                 if(v){
                 	printf("processing:%s\n", filename);
                 }
@@ -116,8 +132,10 @@ int extract(){
 				perror("Could not read content of file");
 				exit(1);
 			}
+			fclose(file);
 		}
 	}
+	
 	return 1;
 }
 
@@ -167,6 +185,8 @@ int main(int argc, char *argv[]){
 			extract();
 		}
 	}
+
+	fclose(archivefile);
 
 	return 1;
 }
