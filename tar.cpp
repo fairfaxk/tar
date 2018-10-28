@@ -115,7 +115,7 @@ int extract(){
 	struct stat finfo;
 	char filename[PATH_MAX];
 
-	map<ino_t, char*> inodesMap;
+	map<ino_t, string> inodesMap;
 	
 	fread(&finfo, sizeof(struct stat), 1, archivefile);
 	fscanf(archivefile, "%s\n", filename);
@@ -156,18 +156,20 @@ int extract(){
 		}
 		else if(S_ISREG(finfo.st_mode)){
 			//Checks to see if this is a hard link to an existing file. Writes the file if it's not a link
-			std::map<ino_t,char*>::iterator it;
+			std::map<ino_t,string>::iterator it;
 			it = inodesMap.find(finfo.st_ino);
+			//printf("%s\n", it->second);
 			if(it == inodesMap.end()){
 				FILE *file;
-				printf("file:%s inode:%lu size:%ld\n", filename, finfo.st_ino, finfo.st_size);
+				//printf("file:%s inode:%lu size:%ld\n", filename, finfo.st_ino, finfo.st_size);
 				char buf[finfo.st_size];
 			
 				//read content from archive file and write it to new file in directory
 				if(fread(buf,finfo.st_size,1,archivefile)>=0){
 					if((file=fopen(filename, "w"))!=NULL){
 						fwrite(buf, finfo.st_size, 1, file);
-						inodesMap.insert(std::pair<ino_t,char*>(finfo.st_ino,filename));
+						printf("Adding %lu:%s to map\n", finfo.st_ino, filename);
+						inodesMap.insert(std::pair<ino_t,string>(finfo.st_ino,string(filename)));
 					}
 				}
 				else{
@@ -178,7 +180,8 @@ int extract(){
 			}
 			//If it is a hard link, create it
 			else{
-				if(link(it->second, filename)<0){
+				printf("Linking %s to %s on %lu\n", filename, it->second.c_str(), it->first );
+				if(link(it->second.c_str(), filename)<0){
 					perror("could not create link");
 					exit(1);
 				}	
