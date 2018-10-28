@@ -132,7 +132,7 @@ int extract(){
 	if(!dirs.empty()){
         	std::list<string>::iterator it;
         	for (it = dirs.begin(); it != dirs.end(); ++it){
-			if(mkdir(it->c_str(), 755)!=0){
+			if(mkdir(it->c_str(), 0755)!=0){
 				perror("could not make directory");
 				exit(1);
 			}
@@ -167,17 +167,14 @@ int extract(){
 			//Checks to see if this is a hard link to an existing file. Writes the file if it's not a link
 			std::map<ino_t,string>::iterator it;
 			it = inodesMap.find(finfo.st_ino);
-			//printf("%s\n", it->second);
 			if(it == inodesMap.end()){
 				FILE *file;
-				//printf("file:%s inode:%lu size:%ld\n", filename, finfo.st_ino, finfo.st_size);
 				char buf[finfo.st_size];
 			
 				//read content from archive file and write it to new file in directory
 				if(fread(buf,finfo.st_size,1,archivefile)>=0){
 					if((file=fopen(filename, "w"))!=NULL){
 						fwrite(buf, finfo.st_size, 1, file);
-						//printf("Adding %lu:%s to map\n", finfo.st_ino, filename);
 						inodesMap.insert(std::pair<ino_t,string>(finfo.st_ino,string(filename)));
 					}
 				}
@@ -189,7 +186,6 @@ int extract(){
 			}
 			//If it is a hard link, create it
 			else{
-				//printf("Linking %s to %s on %lu\n", filename, it->second.c_str(), it->first );
 				if(link(it->second.c_str(), filename)<0){
 					perror("could not create link");
 					exit(1);
