@@ -11,14 +11,36 @@
 #include <string.h>
 #include <linux/limits.h>
 #include <set>
+#include <list>
 
 using namespace std;
 
 FILE *archivefile;
 
+list<string> dirs;
+
 bool c = false;
 bool x = false;
 bool v = false;
+
+void breakList(string path){
+    string s = "";
+    
+    for(int i = 0; i<path.length(); i++){
+        char c = path[i];
+        if(c=='/'){
+            dirs.push_back(s);
+            s="";
+        }
+        else if(c==path[path.length()-1]){
+            s+=c;
+            dirs.push_back(s);
+        }
+        else{
+            s+=c;
+        }
+    }
+}
 
 int create(char* path){
 	struct stat finfo;
@@ -28,7 +50,7 @@ int create(char* path){
 	struct dirent *de;
 
 	set<ino_t> inodes;
-
+	
 	d=opendir(path);
 
 	if(d == NULL) { perror("Couldn't open directory"); exit(1); }
@@ -98,8 +120,36 @@ int extract(){
 	struct stat finfo;
 	char filename[PATH_MAX];
 
+	//TODO: USE THIS PART TO REMOVE '/' AND BREAK IT UP IF ITS A SUBDIR
 	fread(&finfo, sizeof(struct stat), 1, archivefile);
 	fscanf(archivefile, "%s\n", filename);
+
+	string pathto = string(filename);
+	
+	//Checks if input path ends in / and removes it if it does (formatting thing)
+	if(pathto[pathto.size()-1]=='/'){
+        	string s = pathto.substr(0, pathto.size()-1);
+        	pathto = s;
+	}
+
+	breakList(pathto);
+	
+	//Checks if the input directory is a subdir and creates the parents if it is
+	if(!dirs.empty()){
+        	std::list<string>::iterator it;
+        	for (it = dirs.begin(); it != dirs.end(); ++it){
+            		if(mkdir(it->c_str(), 755) =0){
+				perror("could not make directory");
+				exit(1);
+			}
+        	}
+	} 
+	
+	//Creates the input directory
+	if(mkdir(pathto, finfo.st_mode=0){
+		perror("could not make directory");
+		exit(1);
+	}
 	
 	while(fread(&finfo, sizeof(struct stat), 1, archivefile)){
                 fscanf(archivefile, "%s\n", filename);
@@ -108,12 +158,9 @@ int extract(){
                 	printf("processing:%s\n", filename);
                 }
 		if(S_ISDIR(finfo.st_mode)){
-			if(mkdir(filename, finfo.st_mode)==0){
-				
-			}
-			else{
-				perror("Could not make directory");
-				exit(1);
+			if(mkdir(filename, finfo.st_mode)!=0){
+                                perror("Could not make directory");
+                                exit(1);
 			}
 		}
 		else if(S_ISREG(finfo.st_mode)){
@@ -126,7 +173,6 @@ int extract(){
 				if((file=fopen(filename, "w"))!=NULL){
 					fwrite(buf, finfo.st_size, 1, file);
 				}
-				//printf("%s", buf);
 			}
 			else{
 				perror("Could not read content of file");
@@ -169,6 +215,22 @@ int main(int argc, char *argv[]){
 				perror("Could not open output archive file\n");
 				exit(-1);
 			}
+			
+			/*string path = string(argv[3]);
+
+        		if(path[path.size()-1]=='/'){
+                		path = path.substr(0, pathto.size()-1);
+        		}
+
+       		 	breakList(path);
+
+        		if(!dirs.empty()){
+				std::list<string>::iterator it;
+                        	for (it = dirs.begin(); it != dirs.end(); ++it){
+					
+            			}
+        		}*/		
+	
 			create(argv[3]);
 		}
 	}
