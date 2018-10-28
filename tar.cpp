@@ -120,17 +120,10 @@ int extract(){
 	struct stat finfo;
 	char filename[PATH_MAX];
 
-	//TODO: USE THIS PART TO REMOVE '/' AND BREAK IT UP IF ITS A SUBDIR
 	fread(&finfo, sizeof(struct stat), 1, archivefile);
 	fscanf(archivefile, "%s\n", filename);
 
 	string pathto = string(filename);
-	
-	//Checks if input path ends in / and removes it if it does (formatting thing)
-	if(pathto[pathto.size()-1]=='/'){
-        	string s = pathto.substr(0, pathto.size()-1);
-        	pathto = s;
-	}
 
 	breakList(pathto);
 	
@@ -138,7 +131,7 @@ int extract(){
 	if(!dirs.empty()){
         	std::list<string>::iterator it;
         	for (it = dirs.begin(); it != dirs.end(); ++it){
-            		if(mkdir(it->c_str(), 755) =0){
+			if(mkdir(it->c_str(), 755)!=0){
 				perror("could not make directory");
 				exit(1);
 			}
@@ -146,7 +139,7 @@ int extract(){
 	} 
 	
 	//Creates the input directory
-	if(mkdir(pathto, finfo.st_mode=0){
+	if(mkdir(pathto.c_str(), finfo.st_mode)!=0){
 		perror("could not make directory");
 		exit(1);
 	}
@@ -216,22 +209,14 @@ int main(int argc, char *argv[]){
 				exit(-1);
 			}
 			
-			/*string path = string(argv[3]);
+			string path = string(argv[3]);
 
+			//If path ends in /, drop the / (for formatting)
         		if(path[path.size()-1]=='/'){
-                		path = path.substr(0, pathto.size()-1);
-        		}
-
-       		 	breakList(path);
-
-        		if(!dirs.empty()){
-				std::list<string>::iterator it;
-                        	for (it = dirs.begin(); it != dirs.end(); ++it){
-					
-            			}
-        		}*/		
+                		path = path.substr(0, path.size()-1);
+        		}		
 	
-			create(argv[3]);
+			create((char*)path.c_str());
 		}
 	}
 	else if(x){
