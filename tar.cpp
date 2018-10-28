@@ -26,15 +26,11 @@ bool v = false;
 void breakList(string path){
     string s = "";
     
-    for(int i = 0; i<path.length(); i++){
+    for(unsigned int i = 0; i<path.length(); i++){
         char c = path[i];
         if(c=='/'){
             dirs.push_back(s);
             s="";
-        }
-        else if(c==path[path.length()-1]){
-            s+=c;
-            dirs.push_back(s);
         }
         else{
             s+=c;
@@ -123,14 +119,13 @@ int extract(){
 	fread(&finfo, sizeof(struct stat), 1, archivefile);
 	fscanf(archivefile, "%s\n", filename);
 
-	string pathto = string(filename);
-
-	breakList(pathto);
+	breakList(string(filename));
 	
 	//Checks if the input directory is a subdir and creates the parents if it is
 	if(!dirs.empty()){
         	std::list<string>::iterator it;
         	for (it = dirs.begin(); it != dirs.end(); ++it){
+			printf("Making: %s\n", it->c_str());
 			if(mkdir(it->c_str(), 755)!=0){
 				perror("could not make directory");
 				exit(1);
@@ -138,8 +133,9 @@ int extract(){
         	}
 	} 
 	
+	printf("Making: %s\n", filename);
 	//Creates the input directory
-	if(mkdir(pathto.c_str(), finfo.st_mode)!=0){
+	if(mkdir(filename, finfo.st_mode)!=0){
 		perror("could not make directory");
 		exit(1);
 	}
