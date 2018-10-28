@@ -13,6 +13,8 @@ using namespace std;
 
 FILE *archivefile;
 
+set<ino_t> inodes;
+
 list<string> dirs;
 
 bool c = false;
@@ -40,8 +42,6 @@ int create(char* path){
 	DIR *d;
 	
 	struct dirent *de;
-
-	set<ino_t> inodes;
 	
 	d=opendir(path);
 
