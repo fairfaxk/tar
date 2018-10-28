@@ -10,6 +10,10 @@
 #include <list>
 #include <map>
 #include <unistd.h>
+#include <utime.h>
+#include <time.h>
+
+
 
 using namespace std;
 
@@ -117,6 +121,8 @@ int extract(){
 
 	map<ino_t, string> inodesMap;
 	
+	map<string, struct stat> directories;
+	
 	fread(&finfo, sizeof(struct stat), 1, archivefile);
 	fscanf(archivefile, "%s\n", filename);
 
@@ -142,6 +148,8 @@ int extract(){
 		exit(1);
 	}
 	
+	directories.insert(std::pair<string,struct stat>(string(filename), finfo));
+	
 	while(fread(&finfo, sizeof(struct stat), 1, archivefile)){
                 fscanf(archivefile, "%s\n", filename);
 
@@ -153,6 +161,7 @@ int extract(){
                                 perror("Could not make directory");
                                 exit(1);
 			}
+			directories.insert(std::pair<string,struct stat>(string(filename), finfo));
 		}
 		else if(S_ISREG(finfo.st_mode)){
 			//Checks to see if this is a hard link to an existing file. Writes the file if it's not a link
@@ -168,7 +177,7 @@ int extract(){
 				if(fread(buf,finfo.st_size,1,archivefile)>=0){
 					if((file=fopen(filename, "w"))!=NULL){
 						fwrite(buf, finfo.st_size, 1, file);
-						printf("Adding %lu:%s to map\n", finfo.st_ino, filename);
+						//printf("Adding %lu:%s to map\n", finfo.st_ino, filename);
 						inodesMap.insert(std::pair<ino_t,string>(finfo.st_ino,string(filename)));
 					}
 				}
@@ -180,13 +189,34 @@ int extract(){
 			}
 			//If it is a hard link, create it
 			else{
-				printf("Linking %s to %s on %lu\n", filename, it->second.c_str(), it->first );
+				//printf("Linking %s to %s on %lu\n", filename, it->second.c_str(), it->first );
 				if(link(it->second.c_str(), filename)<0){
 					perror("could not create link");
 					exit(1);
 				}	
 			}
+			//set permissions and stuff for the file
+			struct utimbuf times;
+			times.actime = finfo.st_atime;
+			times.modtime = finfo.st_mtime;
+
+			if(utime(filename, &times) != 0) { perror("utime"); exit(1); }
+	
+			if(chmod(filename, finfo.st_mode) != 0) { perror("chmod"); exit(1); }
 		}
+	}
+	
+	//set permissions and stuff on all the directories
+	map<string, struct stat>::iterator it;
+	
+	for(it=directories.begin(); it!=directories.end(); it++){
+		struct utimbuf times;
+		times.actime = it->second.st_atime;
+		times.modtime = it->second.st_mtime;
+		
+		if(utime(it->first.c_str(), &times) != 0) { perror("utime"); exit(1); }
+		
+		if(chmod(it->first.c_str(), it->second.st_mode) != 0) { perror("chmod"); exit(1); }
 	}
 	
 	return 1;
