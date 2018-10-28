@@ -1,11 +1,7 @@
 #include <stdio.h>
-#include <sstream>
-#include <iostream>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <cstdlib>
 #include <string>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string.h>
@@ -55,6 +51,7 @@ int create(char* path){
 	        if(v){
         	        printf("%s:processing\n", path);
         	}
+		inodes.insert(finfo.st_ino);
 		fwrite(&finfo, sizeof(struct stat), 1, archivefile);
 		fprintf(archivefile, "%s\n", path);
 	}
@@ -125,7 +122,6 @@ int extract(){
 	if(!dirs.empty()){
         	std::list<string>::iterator it;
         	for (it = dirs.begin(); it != dirs.end(); ++it){
-			printf("Making: %s\n", it->c_str());
 			if(mkdir(it->c_str(), 755)!=0){
 				perror("could not make directory");
 				exit(1);
@@ -133,7 +129,9 @@ int extract(){
         	}
 	} 
 	
-	printf("Making: %s\n", filename);
+	if(v){
+		printf("processing:%s\n", filename);
+	}
 	//Creates the input directory
 	if(mkdir(filename, finfo.st_mode)!=0){
 		perror("could not make directory");
