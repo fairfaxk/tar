@@ -81,7 +81,7 @@ int create(char* path){
 					fprintf(archivefile, "%s\n", s.c_str());
 					
 					//write the linked path to the file
-					char linkedPath[1024];
+					char linkedPath[PATH_MAX];
 
 					ssize_t len;
 
@@ -188,10 +188,10 @@ int extract(){
 			directories.insert(std::pair<string,struct stat>(string(filename), finfo));
 		}
 		else if(S_ISLNK(finfo.st_mode)){
-			char linkedPath[1024];
+			char linkedPath[PATH_MAX];
 			fscanf(archivefile, "%s\n", linkedPath);
 
-			if(symlink(filename, linkedPath) != 0) { perror("Could not create symlink"); exit(1); }
+			if(symlink(linkedPath, filename) != 0) { perror("Could not create symlink"); exit(1); }
 
 		}
 		else if(S_ISREG(finfo.st_mode)){
