@@ -65,7 +65,7 @@ int create(char* path){
 		if(string(de->d_name)!="." && string(de->d_name)!=".."){	
 			string s = string(path) + "/" + string(de->d_name);
 		
-			if(stat(s.c_str(), &finfo) == 0){
+			if(lstat(s.c_str(), &finfo) == 0){
 				if(S_ISDIR(finfo.st_mode)){
 					create((char *) s.c_str());
 				}
@@ -73,6 +73,7 @@ int create(char* path){
                                         if(v){
                                                 printf("%s:processing\n", s.c_str());
                                         }
+
 					//write the struct stat to the file
 					fwrite(&finfo, sizeof(struct stat), 1, archivefile);
 					
@@ -185,6 +186,13 @@ int extract(){
                                 exit(1);
 			}
 			directories.insert(std::pair<string,struct stat>(string(filename), finfo));
+		}
+		else if(S_ISLNK(finfo.st_mode)){
+			char linkedPath[1024];
+			fscanf(archivefile, "%s\n", linkedPath);
+
+			if(symlink(filename, linkedPath) != 0) { perror("Could not create symlink"); exit(1); }
+
 		}
 		else if(S_ISREG(finfo.st_mode)){
 			//Checks to see if this is a hard link to an existing file. Writes the file if it's not a link
