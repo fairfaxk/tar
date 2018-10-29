@@ -6,14 +6,13 @@
 #include <dirent.h>
 #include <string.h>
 #include <linux/limits.h>
+#include <limits.h>
 #include <set>
 #include <list>
 #include <map>
 #include <unistd.h>
 #include <utime.h>
 #include <time.h>
-
-
 
 using namespace std;
 
@@ -70,10 +69,34 @@ int create(char* path){
 				if(S_ISDIR(finfo.st_mode)){
 					create((char *) s.c_str());
 				}
+				else if(S_ISLNK(finfo.st_mode)){
+                                        if(v){
+                                                printf("%s:processing\n", s.c_str());
+                                        }
+					//write the struct stat to the file
+					fwrite(&finfo, sizeof(struct stat), 1, archivefile);
+					
+					//write the file name to the file
+					fprintf(archivefile, "%s\n", s.c_str());
+					
+					//write the linked path to the file
+					char linkedPath[1024];
+
+					ssize_t len;
+
+					if((len=readlink(s.c_str(), linkedPath, sizeof(linkedPath)-1))<0){
+						perror("Couldn't read symlink");	
+						exit(1);
+					}
+					
+					linkedPath[len] = '\0';
+
+					fprintf(archivefile, "%s\n", linkedPath);						
+				}
 				else if(S_ISREG(finfo.st_mode)){
-	                               if(v){
-         	                               printf("%s:processing\n", s.c_str());
-                 	               }
+	                                if(v){
+         	                                printf("%s:processing\n", s.c_str());
+                 	                }
 
 					FILE *file;
 				
